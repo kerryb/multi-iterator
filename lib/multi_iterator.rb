@@ -1,4 +1,7 @@
 class MultiIterator
+  class IteratorOutOfOrder < RuntimeError
+  end
+
   include Enumerable
 
   def initialize *iterators
@@ -9,7 +12,13 @@ class MultiIterator
     loop do
       values = next_values
       break if values.empty?
-      yield values.sort_by {|k,v| v }.first.first.next
+      iterator, value = values.sort_by {|k,v| v }.first
+      iterator.next
+      begin
+        raise IteratorOutOfOrder if value > iterator.peek
+      rescue StopIteration
+      end
+      yield value
     end
   end
 
